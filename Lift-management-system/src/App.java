@@ -11,6 +11,7 @@ import models.Request;
 public class App {
     private static LiftManager liftManager;
     private static Thread liftManagerThread;
+    
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter number of lifts");

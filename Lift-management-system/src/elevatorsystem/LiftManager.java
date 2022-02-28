@@ -20,9 +20,10 @@ public class LiftManager implements Runnable {
     private static Map<Integer, Lift> upMovingMap = new ConcurrentHashMap<Integer, Lift>();
     private static Map<Integer, Lift> downMovingMap = new ConcurrentHashMap<Integer, Lift>();
     private static final int MAX_LIFTS = 50;
-    private static List<Lift> lifts = new ArrayList<Lift>(MAX_LIFTS);
+    private static List<Lift> lifts;
     //singleton thread safe
     private static LiftManager instance = new LiftManager();
+    private static ExecutorService executorService = Executors.newFixedThreadPool(100);
     
     private LiftManager() {
         if(instance!=null){
@@ -36,11 +37,11 @@ public class LiftManager implements Runnable {
     }
 
     public static void initializeLifts(int numberOfLifts) {
-        ExecutorService executor = Executors.newFixedThreadPool(100);
+        lifts = new ArrayList<Lift>(numberOfLifts);
         for(int i=0; i<numberOfLifts; i++){
             Lift elevator = new Lift(i);
 
-            executor.execute(elevator);
+            executorService.execute(elevator);
 
             lifts.add(elevator);
             System.out.println("Lift " + i + " created");
@@ -92,10 +93,11 @@ public class LiftManager implements Runnable {
             //check nulls
             int selectedLiftId = sortedDistances.firstEntry().getValue();
             lift = upMovingMap.get(selectedLiftId);
+            System.out.println("Lift " + lift.getId() + " selected");
         } else if(liftState.equals(LiftState.DOWN)){
             for(Lift elevator : downMovingMap.values()){
                 int distance = elevator.getCurrentFloor() - requestedFloor;
-                if(distance<0 && elevator.getLiftState().equals(LiftState.DOWN)){
+                if(distance>0 && elevator.getLiftState().equals(LiftState.DOWN)){
                     continue;
                 }else{
                     sortedDistances.put(Math.abs(distance), elevator.getId());
@@ -103,6 +105,7 @@ public class LiftManager implements Runnable {
             }
             int selectedLiftId = sortedDistances.firstEntry().getValue();
             lift = downMovingMap.get(selectedLiftId);
+            System.out.println("Lift " + selectedLiftId + " selected");
         }
 
         //stop or pass by relavant floors
@@ -128,6 +131,7 @@ public class LiftManager implements Runnable {
         floorSet2.add(destinationFloor);
         lift.floorStopsMap.put(liftDir2, floorSet2);
 
+        System.out.println("Lift " + lift.getId() + " stopped at " + lift.getCurrentFloor());
         return lift;
 
 
@@ -156,11 +160,12 @@ public class LiftManager implements Runnable {
             upMovingMap.put(lift.getId(), lift);
             downMovingMap.put(lift.getId(), lift);
         }
+        System.out.println("Lift " + lift.getId() + " updated");
     }
 
     @Override
     public void run() {
-        stopManager = false;
+        setStopManager(false);
         while(true){
             try{
                 Thread.sleep(1000);

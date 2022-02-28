@@ -1,9 +1,9 @@
 package models;
 
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NavigableSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import elevatorsystem.LiftManager;
 import enums.DoorStatusEnum;
@@ -13,7 +13,7 @@ public class Lift implements Runnable {
     DoorStatusEnum doorStatus;
     int id;
     private LiftState liftState;
-    int currentFloor;
+    private int currentFloor;
     int targetFloor;
     int maxFloor;
     int minFloor;
@@ -84,7 +84,7 @@ public class Lift implements Runnable {
     }
 
     public boolean isOperating() {
-        return operating;
+        return this.operating;
     }
 
     public NavigableSet<Integer> getFloorStops() {
@@ -111,7 +111,7 @@ public class Lift implements Runnable {
             this.floorStops.clear();
         } else {
             setLiftState(LiftState.STATIONARY);
-            this.floorStopsMap = new LinkedHashMap<LiftState, NavigableSet<Integer>>();
+            this.floorStopsMap = new ConcurrentHashMap<LiftState, NavigableSet<Integer>>();
 
             // To let controller know that this elevator is ready to serve
             LiftManager.updateLiftLists(this);
@@ -127,49 +127,81 @@ public class Lift implements Runnable {
 
             while (it.hasNext()) {
                 LiftState state = it.next();
+                System.out.println("Lift " + id + " is moving " + state);
                 floorStops = floorStopsMap.get(state);
+                
                 it.remove();
-
-                Integer currentFloor = null;
-                Integer nextFloor = null;
-
-                while (!floorStops.isEmpty()) {
-                    if (liftState.equals(LiftState.UP)) {
-                        currentFloor = floorStops.pollFirst();
-                        nextFloor = floorStops.higher(currentFloor);
-                        System.out
-                                .println("Lift " + this.id + " is moving UP from " + currentFloor + " to " + nextFloor);
-                    } else if (liftState.equals(LiftState.DOWN)) {
-                        currentFloor = floorStops.pollLast();
-                        nextFloor = floorStops.lower(currentFloor);
-                        System.out.println(
-                                "Lift " + this.id + " is moving DOWN from " + currentFloor + " to " + nextFloor);
+                for (int i = 0; i < floorStops.size(); i++) {
+                    if (state == LiftState.UP) {
+                        while(currentFloor < floorStops.last()) {
+                            currentFloor++;
+                            System.out.println("Lift " + id + " is moving " + state + " to floor " + currentFloor);
+                            LiftManager.updateLiftLists(this);
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     } else {
-                        return;
+                        while(currentFloor > floorStops.first()) {
+                            currentFloor--;
+                            System.out.println("Lift " + id + " is moving " + state + " to floor " + currentFloor);
+                            LiftManager.updateLiftLists(this);
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
-
-                    setCurrentFloor(currentFloor);
-
-                    if (nextFloor != null) {
-                        // find any new request that might come while on the moving state in certain
-                        // direction
-                        getNextRequestedFloors(currentFloor, nextFloor);
-                    } else {
-                        setLiftState(LiftState.STATIONARY);
-                        LiftManager.updateLiftLists(this);
-                    }
-                    System.out.println("Lift: " + this.id + " is at floor: " + this.currentFloor + " and is in state: "
-                            + this.liftState + this.doorStatus);
-
-                    try {
-                        setDoorStatus(DoorStatusEnum.OPEN);
-                        Thread.sleep(1000);// let the people go out of the lift
-                        setDoorStatus(DoorStatusEnum.CLOSED);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
                 }
+
+                // Lift has reached its destination
+                setLiftState(LiftState.STATIONARY);
+                LiftManager.updateLiftLists(this);
+                
+                // Integer currentFloor = null;
+                // Integer nextFloor = null;
+
+                // while (!floorStops.isEmpty()) {
+                //     if (liftState.equals(LiftState.UP)) {
+                //         currentFloor = floorStops.pollFirst();
+                //         nextFloor = floorStops.higher(currentFloor);
+                //         System.out
+                //                 .println("Lift " + this.id + " is moving UP from " + currentFloor + " to " + nextFloor);
+                //     } else if (liftState.equals(LiftState.DOWN)) {
+                //         currentFloor = floorStops.pollLast();
+                //         nextFloor = floorStops.lower(currentFloor);
+                //         System.out.println(
+                //                 "Lift " + this.id + " is moving DOWN from " + currentFloor + " to " + nextFloor);
+                //     }else{
+                //         System.out.println("Lift " + this.id + " is moving UP from " + currentFloor + " to " + nextFloor);
+                //         return;
+                //     }
+                //     System.out.println("Lift " + this.id + " is moving from " + currentFloor + " to " + nextFloor);
+                //     setCurrentFloor(currentFloor);
+
+                //     if (nextFloor != null) {
+                //         // find any new request that might come while on the moving state in certain
+                //         // direction
+                //         getNextRequestedFloors(currentFloor, nextFloor);
+                //     } else {
+                //         setLiftState(LiftState.STATIONARY);
+                //         LiftManager.updateLiftLists(this);
+                //     }
+                //     System.out.println("Lift: " + this.id + " is at floor: " + this.currentFloor + " and is in state: "
+                //             + this.liftState + this.doorStatus);
+
+                //     try {
+                //         setDoorStatus(DoorStatusEnum.OPEN);
+                //         Thread.sleep(1000);// let the people go out of the lift
+                //         setDoorStatus(DoorStatusEnum.CLOSED);
+                //     } catch (InterruptedException e) {
+                //         e.printStackTrace();
+                //     }
+
+                // }
             }
             try {
                 LiftManager.getInstance().wait();
