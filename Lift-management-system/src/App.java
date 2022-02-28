@@ -12,20 +12,25 @@ public class App {
     private static LiftManager liftManager;
     private static Thread liftManagerThread;
     public static void main(String[] args) throws Exception {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter number of lifts");
+        int numberOfLifts = scanner.nextInt();
 
         liftManager = LiftManager.getInstance();
-        LiftManager.initializeLifts(5);
+        LiftManager.initializeLifts(numberOfLifts);
         liftManagerThread = new Thread(liftManager);
         liftManagerThread.start();
+        System.out.println("Enter number of Floors");
+        int numberOfFloors = scanner.nextInt();
 
         int choice;
         while(true){
-            System.out.println("1. Add Request");
+            System.out.println("1. Add Request minFloor (0) "+ "maxFloor ("+numberOfFloors+")");
             System.out.println("2. All Lift Status");
             System.out.println("3. Lift Status for a particular lift");
             System.out.println("4. Exit");
             System.out.println("Enter your choice: ");
-            Scanner scanner = new Scanner(System.in);
+            
             choice = scanner.nextInt(); 
             if(choice==1){
                 scanner = new Scanner(System.in);
@@ -51,6 +56,6 @@ public class App {
                 System.out.println("Lift: " + lift.getId() + " is at floor: " + lift.getCurrentFloor() + " and is in state: " + lift.getLiftState() +"("+ lift.getDoorStatus()+")");
             }
         }
-
+        scanner.close();
     }
 }
