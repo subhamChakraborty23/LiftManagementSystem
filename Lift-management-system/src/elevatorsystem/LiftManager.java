@@ -1,11 +1,11 @@
 package elevatorsystem;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,15 +14,15 @@ import enums.LiftState;
 import models.Request;
 import models.Lift;
 
-public final class LiftManager implements Runnable {
+public class LiftManager implements Runnable {
     
     private boolean stopManager;
-    private static Map<Integer, Lift> upMovingMap = new HashMap<Integer, Lift>();
-    private static Map<Integer, Lift> downMovingMap = new HashMap<Integer, Lift>();
+    private static Map<Integer, Lift> upMovingMap = new ConcurrentHashMap<Integer, Lift>();
+    private static Map<Integer, Lift> downMovingMap = new ConcurrentHashMap<Integer, Lift>();
     private static final int MAX_LIFTS = 50;
     private static List<Lift> lifts = new ArrayList<Lift>(MAX_LIFTS);
     //singleton thread safe
-    private static final LiftManager instance = new LiftManager();
+    private static LiftManager instance = new LiftManager();
     
     private LiftManager() {
         if(instance!=null){
