@@ -1,5 +1,7 @@
 
 
+import java.util.Scanner;
+
 import elevatorsystem.LiftManager;
 import models.Lift;
 import models.Request;
@@ -23,12 +25,14 @@ public class App {
             System.out.println("3. Lift Status for a particular lift");
             System.out.println("4. Exit");
             System.out.println("Enter your choice: ");
-            choice = Integer.parseInt(System.console().readLine());
+            Scanner scanner = new Scanner(System.in);
+            choice = scanner.nextInt(); 
             if(choice==1){
+                scanner = new Scanner(System.in);
                 System.out.println("Enter the request floor: ");
-                int requestFloor = Integer.parseInt(System.console().readLine());
+                int requestFloor = scanner.nextInt();
                 System.out.println("Enter the target floor: ");
-                int targetFloor = Integer.parseInt(System.console().readLine());
+                int targetFloor = scanner.nextInt();
                 Request request = new Request(requestFloor, targetFloor);
                 Lift lift = request.submitRequest();
                 Thread.sleep(3000);
@@ -41,7 +45,8 @@ public class App {
                 break;
             }else if(choice==3){
                 System.out.println("Enter the lift id: ");
-                int liftId = Integer.parseInt(System.console().readLine());
+                scanner = new Scanner(System.in);
+                int liftId = scanner.nextInt();
                 Lift lift = LiftManager.getInstance().getLifts().get(liftId);
                 System.out.println("Lift: " + lift.getId() + " is at floor: " + lift.getCurrentFloor() + " and is in state: " + lift.getLiftState() +"("+ lift.getDoorStatus()+")");
             }
